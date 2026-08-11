@@ -9,8 +9,8 @@ days that nothing on the order appears to cover. Nobody has to leave the order
 screen to look a menu up.
 
 ```
-monthly workbook (dietitians)
-        |  tools/menu_db.py
+workbooks/26-27 Sept Menu.xlsm  (uploaded through GitHub)
+        |  Build menus action -> tools/menu_db.py
         v
 data/menus.json  --published--> raw.githubusercontent.com
         |                              |
@@ -24,19 +24,25 @@ data/menus.json  --published--> raw.githubusercontent.com
 
 ## Publishing a new month
 
+Upload the workbook the dietitians publish into [`workbooks/`](workbooks) using
+GitHub's **Add file -> Upload files**. That is the whole job: the `Build menus`
+action reimports the folder and commits the rebuilt `data/menus.json` and the
+extension's offline copy. Installed extensions pick it up within 12 hours, or
+immediately via **Refresh** in the menu window.
+
+Locally, the same thing:
+
 ```bash
 pip install -r tools/requirements.txt
-python tools/menu_db.py "26-27 Oct Menu.xlsm" --out data
+python tools/menu_db.py workbooks --out data
 cp data/menus.json extension/data/menus.json   # refresh the offline fallback
-git add data extension/data && git commit -m "menus: add October 2026" && git push
 ```
 
-Installed extensions pick the new file up within 12 hours, or immediately via
-**Refresh** in the menu window. `data/menus.sqlite` accumulates every month
-imported, so re-running with a revised workbook replaces that month rather than
-duplicating it, and each run also writes `menu_flat.csv` (one row per served
-item, for review in Excel) and `import_report.txt` (counts, anomalies, and a
-cross-check against the workbook's own summary sheet).
+Each run also writes `menu_flat.csv` (one row per served item, for review in
+Excel) and `import_report.txt` (counts, anomalies, and a cross-check against the
+workbook's own summary sheet). Every workbook in the folder is reimported on each
+run, so the published menu depends only on the folder's contents and a bad upload
+is undone by deleting the file.
 
 The repository must stay **public** for the extension to fetch `data/menus.json`
 without a token. The menus are already published on schoolcafe.com, so this
@@ -46,6 +52,7 @@ exposes nothing that is not public already.
 
 | Path | What it is |
 | --- | --- |
+| `workbooks/` | The monthly workbooks, as uploaded |
 | `tools/menu_db.py` | Reads the workbook, writes `menus.json`, `menus.sqlite`, `menu_flat.csv` and an import report |
 | `tools/match_check.mjs` | Dry-runs the missing-item check against a real order, outside the browser |
 | `data/menus.json` | The published menu file the extension fetches |
