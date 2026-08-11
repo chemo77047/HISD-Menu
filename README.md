@@ -9,8 +9,8 @@ days that nothing on the order appears to cover. Nobody has to leave the order
 screen to look a menu up.
 
 ```
-workbooks/26-27 Sept Menu.xlsm  (uploaded through GitHub)
-        |  Build menus action -> tools/menu_db.py
+monthly workbook, uploaded to the private HISD-Menu-Workbooks
+        |  its Publish menu action, running tools/menu_db.py from here
         v
 data/menus.json  --published--> raw.githubusercontent.com
         |                              |
@@ -24,17 +24,21 @@ data/menus.json  --published--> raw.githubusercontent.com
 
 ## Publishing a new month
 
-Upload the workbook the dietitians publish into [`workbooks/`](workbooks) using
-GitHub's **Add file -> Upload files**. That is the whole job: the `Build menus`
-action reimports the folder and commits the rebuilt `data/menus.json` and the
-extension's offline copy. Installed extensions pick it up within 12 hours, or
-immediately via **Refresh** in the menu window.
+Upload the workbook the dietitians publish into the `workbooks/` folder of the
+private **HISD-Menu-Workbooks** repository, with GitHub's **Add file -> Upload
+files**. That is the whole job: its `Publish menu` action reimports the folder and
+commits the rebuilt `data/menus.json` here. Installed extensions pick it up within
+12 hours, or immediately via **Refresh** in the menu window.
+
+The workbooks are kept private because they carry cost-per-serving and nutrition
+columns; the menu file published here carries neither. The converter lives here,
+not there, and is checked out at run time, so there is one copy of it.
 
 Locally, the same thing:
 
 ```bash
 pip install -r tools/requirements.txt
-python tools/menu_db.py workbooks --out data
+python tools/menu_db.py <folder of workbooks> --out data
 cp data/menus.json extension/data/menus.json   # refresh the offline fallback
 ```
 
@@ -44,6 +48,9 @@ workbook's own summary sheet). Every workbook in the folder is reimported on eac
 run, so the published menu depends only on the folder's contents and a bad upload
 is undone by deleting the file.
 
+`data/menus.sqlite` is a local by-product, not committed: rebuilding from the
+folder each time keeps the published file a function of the uploads alone.
+
 The repository must stay **public** for the extension to fetch `data/menus.json`
 without a token. The menus are already published on schoolcafe.com, so this
 exposes nothing that is not public already.
@@ -52,7 +59,6 @@ exposes nothing that is not public already.
 
 | Path | What it is |
 | --- | --- |
-| `workbooks/` | The monthly workbooks, as uploaded |
 | `tools/menu_db.py` | Reads the workbook, writes `menus.json`, `menus.sqlite`, `menu_flat.csv` and an import report |
 | `tools/match_check.mjs` | Dry-runs the missing-item check against a real order, outside the browser |
 | `data/menus.json` | The published menu file the extension fetches |
