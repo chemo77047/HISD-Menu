@@ -1,0 +1,51 @@
+# Upload a monthly workbook to workbooks/ and the published menu rebuilds itself.
+#
+# Every workbook in the folder is re-imported from scratch on each run, so the
+# result depends only on what is in the folder - no database is carried between
+# runs and a bad upload is undone by deleting the file.
+
+name: Build menus
+
+on:
+  push:
+    paths:
+      - "workbooks/**"
+      - "tools/menu_db.py"
+      - ".github/workflows/build-menus.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: pip install -r tools/requirements.txt
+
+      - name: Import the workbooks
+        run: |
+          if [ -z "$(ls -A workbooks/*.xls[mx] 2>/dev/null)" ]; then
+            echo "No workbooks to import."; exit 0
+          fi
+          python tools/menu_db.py workbooks --out data | tee import.log
+          cp data/menus.json extension/data/menus.json
+
+      - name: Report
+        run: cat data/import_report.txt || true
+
+      - name: Commit the rebuilt menu
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/menus.json data/menu_flat.csv data/import_report.txt extension/data/menus.json
+          if git diff --cached --quiet; then
+            echo "Menu unchanged."; exit 0
+          fi
+          git commit -m "menus: rebuild from workbooks/ [skip ci]"
+          git push

@@ -1,4 +1,7 @@
 __pycache__/
 out/
-*.xlsm
-*.xlsx
+# The workbooks in workbooks/ are the source data and are committed; the ignore
+# is for stray copies elsewhere in the tree.
+/*.xlsm
+/*.xlsx
+data/menus.sqlite
