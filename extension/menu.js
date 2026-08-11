@@ -278,15 +278,17 @@ function renderChooser(report, context) {
   }
 }
 
+// Where the menu came from is only worth a line when it is not where it should
+// have come from; on the normal path the date it was published is the useful part.
 function renderDataSource(dataSource) {
   if (!dataSource) return;
   const when = dataSource.fetchedAt
-    ? new Date(dataSource.fetchedAt).toLocaleString()
-    : "not downloaded";
-  const problem = dataSource.error
-    ? ` \u2014 could not reach the published menu (${dataSource.error}), showing the last copy.`
-    : "";
-  el("dataSource").textContent = `Menu data: ${dataSource.source} (${when})${problem}`;
+    ? new Date(dataSource.fetchedAt).toLocaleDateString()
+    : null;
+  el("dataSource").textContent = dataSource.error
+    ? "Could not reach the published menu, so this is the last copy downloaded"
+      + (when ? ` (${when}).` : ".")
+    : when ? `Menu downloaded ${when}` : "";
 }
 
 function escapeHtml(text) {
