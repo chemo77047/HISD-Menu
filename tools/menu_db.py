@@ -156,8 +156,14 @@ class WorkbookParser:
                 self.warnings.append(f"unrecognised month in week range: {value!r}")
                 continue
             month = MONTHS[month_name[:3]]
-            # A week range starting in the next calendar year rolls the year over.
-            week_year = year + 1 if month < base_month and base_month == 12 else year
+            # A month's weeks can spill into the adjacent calendar year in either
+            # direction: December runs into January, and a January workbook's first
+            # week can start in the previous December.
+            week_year = year
+            if base_month == 12 and month < base_month:
+                week_year = year + 1
+            elif base_month == 1 and month > base_month:
+                week_year = year - 1
             start = date(week_year, month, day)
             if start.weekday() != 0:
                 self.warnings.append(
@@ -226,7 +232,9 @@ class WorkbookParser:
             self.warnings.append(f"{sheet}: no 'Week N' header found, sheet skipped")
             return []
 
-        meal = meal_for_line(sheet)
+        # Off the canonical name, not the tab: the tab 'HS Favorites' is the line
+        # 'HS Snack Favorites', and only the latter says which meal it is.
+        meal = meal_for_line(LINE_ALIASES.get(sheet, sheet))
         records: list[MenuRecord] = []
 
         for position, (week_no, header_row) in enumerate(week_rows):

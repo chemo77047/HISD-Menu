@@ -180,7 +180,21 @@ function renderDays(report) {
 
   // Anything warned about is marked in the day list too, so a buyer reading down
   // Wednesday can see at a glance which of Wednesday's food is not on the order.
-  const flaggedNames = new Set((report.missing || []).map((entry) => entry.name));
+  // Warnings about a dish's accompaniment (a bun, a roll served with it) are
+  // recorded under the dish's name, so the tag names the part rather than saying
+  // the dish is absent - the dish itself may well be on the order.
+  const flagged = new Map();
+  for (const entry of report.missing || []) {
+    if (!flagged.has(entry.name)) flagged.set(entry.name, []);
+    flagged.get(entry.name).push(entry.part || null);
+  }
+
+  const tagFor = (name) => {
+    const parts = flagged.get(name);
+    if (!parts) return null;
+    if (parts.includes(null)) return "not on this order";
+    return `missing ${parts.join(", ")}`;
+  };
 
   for (const day of report.days) {
     const section = document.createElement("section");
@@ -221,10 +235,10 @@ function renderDays(report) {
             seen.add(item.name);
 
             const row = document.createElement("div");
-            const notOrdered = item.flaggable && flaggedNames.has(item.name);
-            row.className = "item" + (notOrdered ? " not-ordered" : "");
+            const tag = item.flaggable ? tagFor(item.name) : null;
+            row.className = "item" + (tag ? " not-ordered" : "");
             row.innerHTML = escapeHtml(item.name) +
-              (notOrdered ? '<span class="tag">not on this order</span>' : "");
+              (tag ? `<span class="tag">${escapeHtml(tag)}</span>` : "");
             group.appendChild(row);
           }
           body.appendChild(group);

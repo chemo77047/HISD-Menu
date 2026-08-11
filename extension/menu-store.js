@@ -22,8 +22,12 @@ export async function getMenuUrl() {
   return stored[MENU_URL_KEY] || DEFAULT_MENU_URL;
 }
 
+// https only: the menu is rendered as the authority on what a school is served,
+// so it may not arrive over a channel anything on the network can rewrite.
 export async function setMenuUrl(url) {
-  await chrome.storage.local.set({ [MENU_URL_KEY]: url });
+  const parsed = new URL(url);
+  if (parsed.protocol !== "https:") throw new Error("the menu URL must be https");
+  await chrome.storage.local.set({ [MENU_URL_KEY]: parsed.toString() });
 }
 
 async function readBundledMenus() {
@@ -42,12 +46,13 @@ function isUsable(payload) {
 export async function getMenus({ forceRefresh = false } = {}) {
   const cached = (await chrome.storage.local.get(MENU_CACHE_KEY))[MENU_CACHE_KEY];
   const age = cached ? Date.now() - new Date(cached.fetchedAt).getTime() : Infinity;
+  const url = await getMenuUrl();
+  const cacheHit = cached && cached.source === url && isUsable(cached.menus);
 
-  if (!forceRefresh && cached && isUsable(cached.menus) && age < REFRESH_AFTER_MS) {
+  if (!forceRefresh && cacheHit && age < REFRESH_AFTER_MS) {
     return { menus: cached.menus, source: cached.source, fetchedAt: cached.fetchedAt };
   }
 
-  const url = await getMenuUrl();
   try {
     const response = await fetch(url, { cache: "no-cache" });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -59,7 +64,7 @@ export async function getMenus({ forceRefresh = false } = {}) {
     return entry;
   } catch (error) {
     const reason = String(error.message || error);
-    if (cached && isUsable(cached.menus)) {
+    if (cacheHit) {
       return { ...cached, error: reason };
     }
     return {
