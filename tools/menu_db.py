@@ -515,29 +515,24 @@ def workbooks_in(target: Path) -> list[Path]:
     return [target]
 
 
-def main(argv: list[str] | None = None) -> int:
-    arguments = argparse.ArgumentParser(description=__doc__,
-                                        formatter_class=argparse.RawDescriptionHelpFormatter)
-    arguments.add_argument("target", type=Path, help="workbook, or folder of workbooks")
-    arguments.add_argument("--out", type=Path, default=Path("out"), help="output folder")
-    parsed = arguments.parse_args(argv)
+def import_workbooks(files: list[Path], out: Path, log=print) -> dict:
+    """Import every workbook into out/menus.sqlite and rewrite the exports.
 
-    files = workbooks_in(parsed.target)
-    if not files:
-        print(f"no .xlsm/.xlsx files found in {parsed.target}")
-        return 1
-
-    parsed.out.mkdir(parents=True, exist_ok=True)
-    db_path = parsed.out / "menus.sqlite"
+    Shared with the desktop tool in menu_tool.py, which passes its own `log`.
+    Returns the menus.json payload. A workbook that fails is reported and
+    skipped rather than losing the rest.
+    """
+    out.mkdir(parents=True, exist_ok=True)
+    db_path = out / "menus.sqlite"
     report: list[str] = []
 
     for path in files:
-        print(f"reading {path.name} ...")
+        log(f"reading {path.name} ...")
         try:
             parser = WorkbookParser(path)
             records = parser.parse()
         except Exception as error:  # a bad workbook must not lose the others
-            print(f"  FAILED: {error}")
+            log(f"  FAILED: {error}")
             report += [f"=== {path.name}", f"  FAILED: {error}", ""]
             continue
 
@@ -548,10 +543,10 @@ def main(argv: list[str] | None = None) -> int:
             by_line.setdefault(record.serving_line, set()).add(record.serve_date)
         missing_recipe = sum(1 for r in records if not r.recipe_no)
 
-        print(f"  {parser.month_label}: {len(records)} items across "
-              f"{len(by_line)} lines, {len({r.serve_date for r in records})} serving days")
+        log(f"  {parser.month_label}: {len(records)} items across "
+            f"{len(by_line)} lines, {len({r.serve_date for r in records})} serving days")
         if missing_recipe:
-            print(f"  {missing_recipe} items without a recipe number")
+            log(f"  {missing_recipe} items without a recipe number")
 
         report += [
             f"=== {path.name}",
@@ -568,16 +563,32 @@ def main(argv: list[str] | None = None) -> int:
             report += ["  warnings:"] + [f"    {w}" for w in parser.warnings]
         report.append("")
 
-    payload = export_json(db_path, parsed.out / "menus.json")
-    export_csv(db_path, parsed.out / "menu_flat.csv")
+    payload = export_json(db_path, out / "menus.json")
+    export_csv(db_path, out / "menu_flat.csv")
 
     summary = (f"database now covers {payload['servingDayCount']} serving days "
                f"({payload['firstDate']} to {payload['lastDate']}) "
                f"across {len(payload['lines'])} serving lines")
-    print(summary)
-    (parsed.out / "import_report.txt").write_text(
+    log(summary)
+    (out / "import_report.txt").write_text(
         "\n".join(report + [summary, ""]), encoding="utf-8")
-    print(f"wrote {parsed.out}/menus.json, menus.sqlite, menu_flat.csv, import_report.txt")
+    log(f"wrote {out}/menus.json, menus.sqlite, menu_flat.csv, import_report.txt")
+    return payload
+
+
+def main(argv: list[str] | None = None) -> int:
+    arguments = argparse.ArgumentParser(description=__doc__,
+                                        formatter_class=argparse.RawDescriptionHelpFormatter)
+    arguments.add_argument("target", type=Path, help="workbook, or folder of workbooks")
+    arguments.add_argument("--out", type=Path, default=Path("out"), help="output folder")
+    parsed = arguments.parse_args(argv)
+
+    files = workbooks_in(parsed.target)
+    if not files:
+        print(f"no .xlsm/.xlsx files found in {parsed.target}")
+        return 1
+
+    import_workbooks(files, parsed.out)
     return 0
 
 

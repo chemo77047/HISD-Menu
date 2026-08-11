@@ -9,8 +9,8 @@ days that nothing on the order appears to cover. Nobody has to leave the order
 screen to look a menu up.
 
 ```
-monthly workbook, uploaded to the private HISD-Menu-Workbooks
-        |  its Publish menu action, running tools/menu_db.py from here
+monthly workbook (kept off GitHub - it has costs in it)
+        |  SNAP Menu Builder, then upload menus.json
         v
 data/menus.json  --published--> raw.githubusercontent.com
         |                              |
@@ -24,32 +24,36 @@ data/menus.json  --published--> raw.githubusercontent.com
 
 ## Publishing a new month
 
-Upload the workbook the dietitians publish into the `workbooks/` folder of the
-private **HISD-Menu-Workbooks** repository, with GitHub's **Add file -> Upload
-files**. That is the whole job: its `Publish menu` action reimports the folder and
-commits the rebuilt `data/menus.json` here. Installed extensions pick it up within
-12 hours, or immediately via **Refresh** in the menu window.
-
-The workbooks are kept private because they carry cost-per-serving and nutrition
-columns; the menu file published here carries neither. The converter lives here,
-not there, and is checked out at run time, so there is one copy of it.
-
-Locally, the same thing:
+Run **SNAP Menu Builder** (`tools/menu_tool.py`), choose the workbook the
+dietitians published, press Build, then upload the `menus.json` it writes to
+`data/` here with GitHub's **Add file -> Upload files**. Installed extensions pick
+it up within 12 hours, or immediately via **Refresh** in the menu window.
 
 ```bash
 pip install -r tools/requirements.txt
-python tools/menu_db.py <folder of workbooks> --out data
+python tools/menu_tool.py
+```
+
+The workbook itself is never uploaded: it carries cost-per-serving and nutrition
+columns, and this repository is public. `menus.json` carries neither - only dates,
+serving lines, and item names.
+
+Months accumulate in the tool's workspace folder (`SNAP Menu Builder` in your home
+directory), so building October adds to September rather than replacing it, and
+rebuilding a revised month replaces just that month. **Start fresh** empties it.
+
+`tools/build.bat` packages the tool as a single `.exe` for a machine without
+Python. The same import runs headless:
+
+```bash
+python tools/menu_db.py <workbook or folder> --out data
 cp data/menus.json extension/data/menus.json   # refresh the offline fallback
 ```
 
 Each run also writes `menu_flat.csv` (one row per served item, for review in
 Excel) and `import_report.txt` (counts, anomalies, and a cross-check against the
-workbook's own summary sheet). Every workbook in the folder is reimported on each
-run, so the published menu depends only on the folder's contents and a bad upload
-is undone by deleting the file.
-
-`data/menus.sqlite` is a local by-product, not committed: rebuilding from the
-folder each time keeps the published file a function of the uploads alone.
+workbook's own summary sheet). A month is replaced wholesale when it is
+reimported, so a revised workbook cannot leave half of the old one behind.
 
 The repository must stay **public** for the extension to fetch `data/menus.json`
 without a token. The menus are already published on schoolcafe.com, so this
@@ -59,6 +63,7 @@ exposes nothing that is not public already.
 
 | Path | What it is |
 | --- | --- |
+| `tools/menu_tool.py` | SNAP Menu Builder: the desktop window the monthly workbook goes through |
 | `tools/menu_db.py` | Reads the workbook, writes `menus.json`, `menus.sqlite`, `menu_flat.csv` and an import report |
 | `tools/match_check.mjs` | Dry-runs the missing-item check against a real order, outside the browser |
 | `data/menus.json` | The published menu file the extension fetches |
