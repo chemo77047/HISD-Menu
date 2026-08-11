@@ -72,18 +72,6 @@ p { margin: 0 0 10px; }
 
 .chooser-options { display: flex; flex-wrap: wrap; gap: 8px; }
 
-.missing-row {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-  padding: 7px 0;
-  border-top: 1px solid var(--line);
-}
-.missing-row:first-child { border-top: none; }
-.missing-name { font-weight: 600; }
-.missing-part { color: var(--amber); font-weight: 600; }
-.missing-when { margin-left: auto; text-align: right; font-size: 12px; color: var(--muted); }
-
 .day {
   margin-top: 16px;
   border: 1px solid var(--line);
@@ -111,13 +99,25 @@ p { margin: 0 0 10px; }
   padding-bottom: 3px;
   margin-bottom: 5px;
 }
-.item { padding: 2px 0; }
-.item.not-ordered { color: #b34700; font-weight: 600; }
+.item { padding: 2px 4px; border-left: 3px solid transparent; }
+
+/* The whole row is coloured, not just the words: the day lists are long, and a
+   band of colour is findable while scrolling in a way that red text is not. */
+.item.not-ordered {
+  color: #8a3800;
+  font-weight: 600;
+  background: var(--amber-bg);
+  border-left-color: var(--amber);
+  border-radius: 3px;
+  padding: 3px 6px;
+  margin: 2px 0;
+}
 .item .tag {
   font-size: 11px;
   color: var(--muted);
   font-weight: 400;
   margin-left: 6px;
 }
+.item.not-ordered .tag { color: #a35100; }
 
 footer { margin-top: 22px; padding-top: 10px; border-top: 1px solid var(--line); }

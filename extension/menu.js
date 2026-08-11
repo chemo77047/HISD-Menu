@@ -97,7 +97,6 @@ async function render({ forceRefresh = false, rereadPage = false } = {}) {
     `${report.orderItemCount} lines on the order \u2022 ${report.servingLines.join(", ")}`;
 
   renderNotice(report);
-  renderMissing(report);
   renderDays(report);
   renderDataSource(report.dataSource);
 }
@@ -110,7 +109,6 @@ function showError(text) {
   notice.className = "notice error";
   notice.textContent = text;
   el("days").innerHTML = "";
-  el("missingSection").hidden = true;
 }
 
 function renderNotice(report) {
@@ -136,50 +134,13 @@ function renderNotice(report) {
   notice.textContent = messages.join(" ");
 }
 
-function renderMissing(report) {
-  const container = el("missing");
-  container.innerHTML = "";
-
-  if (!report.missing || report.missing.length === 0) {
-    el("missingSection").hidden = false;
-    container.innerHTML =
-      '<p class="muted">Every entree and side on these days matches something on the order.</p>';
-    return;
-  }
-  el("missingSection").hidden = false;
-
-  for (const entry of report.missing) {
-    const row = document.createElement("div");
-    row.className = "missing-row";
-
-    const name = document.createElement("div");
-    if (entry.kind === "component") {
-      name.innerHTML =
-        `<span class="missing-part">${escapeHtml(entry.part)}</span> for ` +
-        `<span class="missing-name">${escapeHtml(entry.name)}</span>`;
-    } else if (entry.part) {
-      name.innerHTML =
-        `<span class="missing-part">${escapeHtml(entry.part)}</span> ` +
-        `<span class="muted">(part of ${escapeHtml(entry.name)})</span>`;
-    } else {
-      name.innerHTML = `<span class="missing-name">${escapeHtml(entry.name)}</span>`;
-    }
-
-    const when = document.createElement("div");
-    when.className = "missing-when";
-    when.textContent = `${entry.category} \u2022 served ${entry.dates.map(shortDate).join(", ")}`;
-
-    row.append(name, when);
-    container.appendChild(row);
-  }
-}
-
 function renderDays(report) {
   const container = el("days");
   container.innerHTML = "";
 
-  // Anything warned about is marked in the day list too, so a buyer reading down
-  // Wednesday can see at a glance which of Wednesday's food is not on the order.
+  // The day list is the only place a warning appears: reading down Wednesday shows
+  // which of Wednesday's food is not on the order, on the day it is needed, so a
+  // separate list of the same items above only buried the days.
   // Warnings about a dish's accompaniment (a bun, a roll served with it) are
   // recorded under the dish's name, so the tag names the part rather than saying
   // the dish is absent - the dish itself may well be on the order.
@@ -253,7 +214,6 @@ function renderDays(report) {
 function renderChooser(report, context) {
   el("school").textContent = report.rawName;
   el("subtitle").textContent = "";
-  el("missingSection").hidden = true;
   el("days").innerHTML = "";
   el("chooser").hidden = false;
 
