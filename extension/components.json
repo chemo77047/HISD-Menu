@@ -1,0 +1,40 @@
+{
+  "comment": [
+    "Extra items an entree needs that its menu name does not mention.",
+    "",
+    "Most composite entrees already spell their parts out - 'Beef, Steak Fingers w/Roll',",
+    "'Macaroni and Cheese (C) w/Cornbread Poppers (C)' - and those are split on 'w/'",
+    "automatically, so they do not need an entry here. This file is only for the implicit",
+    "cases: a burger's bun is never written on the menu.",
+    "",
+    "'when' is matched against the lowercased menu item name. 'needs' is a list of",
+    "components; each one is satisfied if any order line contains one of its 'any' words.",
+    "Add entries as gaps turn up - no code change required."
+  ],
+  "rules": [
+    {
+      "when": ["burger", "hamburger", "cheeseburger"],
+      "needs": [
+        { "label": "burger buns", "any": ["bun", "roll"] }
+      ]
+    },
+    {
+      "when": ["hot dog", "hotdog", "corn dog"],
+      "needs": [
+        { "label": "hot dog buns", "any": ["bun", "roll"] }
+      ]
+    },
+    {
+      "when": ["soft taco"],
+      "needs": [
+        { "label": "tortillas", "any": ["tortilla"] }
+      ]
+    },
+    {
+      "when": ["nachos"],
+      "needs": [
+        { "label": "tortilla chips", "any": ["chip", "nacho", "tortilla"] }
+      ]
+    }
+  ]
+}
