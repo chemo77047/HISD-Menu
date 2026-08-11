@@ -1,0 +1,32 @@
+=== 26-27_Sept_Menu_full_menu_for_analyzing.xlsm
+  month: September 2026   revision: 2026-06-23 15:04:00
+  items: 3222   lines: 20   serving days: 20
+  items without a recipe number: 0
+  per line:
+    Breakfast SS K-12                   20 days
+    Breakfast SS PreK                   20 days
+    Breakfast Traditional OVS K-12      20 days
+    CACFP Cold Dinner                   20 days
+    CACFP Hot Dinner                    20 days
+    HS Favorites                        20 days
+    HS Homestyle Lunch                  20 days
+    HS SS Satellite Lunch               20 days
+    HS Sack Lunch                       20 days
+    HS Satellite Lunch                  20 days
+    HS Tailgate Menus                    4 days
+    K-12 Snack                          20 days
+    K-8 Lunch                           20 days
+    K-8 Sack Lunch                      20 days
+    K-8 Satellite Lunch                 20 days
+    K-8 Tailgate Menus                   3 days
+    MS Favorites                        20 days
+    PreK Lunch SS                       20 days
+    PreK Snack                          20 days
+    Saturday Menus                       7 days
+  cross-check:
+  cross-check vs 'Menu Item Summary': 2502 summary rows, 3221 parsed rows, 0 only in summary, 719 only in parse
+    lines present in parse but not in summary: HS SS Satellite Lunch, HS Sack Lunch, HS Tailgate Menus, K-8 Sack Lunch, K-8 Tailgate Menus, Saturday Menus
+  warnings:
+    Saturday Menus -2: no 'Week N' header found, sheet skipped
+
+database now covers 20 serving days (2026-09-07 to 2026-10-02) across 20 serving lines

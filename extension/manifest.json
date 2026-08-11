@@ -1,0 +1,34 @@
+{
+  "manifest_version": 3,
+  "name": "SNAP Agent - School Nutrition AI Purchasing Agent",
+  "version": "2.1",
+  "description": "SNAP Agent - School Nutrition AI Purchasing Agent. Created by Anselmo Barrera for Houston ISD Nutrition Services. This is an internal pilot tool and is currently being tested for training purposes.",
+  "permissions": ["storage", "activeTab", "scripting"],
+  "host_permissions": ["<all_urls>"],
+  "background": { "service_worker": "background.js", "type": "module" },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "SNAP Agent",
+    "default_icon": {
+      "16": "icon16.png",
+      "48": "icon48.png",
+      "128": "icon128.png"
+    }
+  },
+  "commands": {
+    "scan-order": {
+      "suggested_key": { "default": "Ctrl+Shift+S" },
+      "description": "Open SNAP Agent"
+    }
+  },
+  "content_scripts": [{
+    "matches": ["<all_urls>"],
+    "js": ["content.js"],
+    "run_at": "document_end"
+  }],
+  "icons": {
+    "16": "icon16.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  }
+}

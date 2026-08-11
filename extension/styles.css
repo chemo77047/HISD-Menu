@@ -1,0 +1,219 @@
+:root {
+  --green: #4a8c3f;
+  --green-dark: #3a7030;
+  --green-light: #5da850;
+  --gray: #f5f5f5;
+  --text: #333333;
+}
+
+body {
+  width: 380px;
+  margin: 0;
+  padding: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: #ffffff;
+  color: var(--text);
+}
+
+.container {
+  padding: 16px;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 12px;
+  padding: 0;
+}
+
+.header-logo {
+  width: 70%;
+  display: block;
+  margin: 0 auto;
+}
+
+.section {
+  margin-bottom: 0;
+}
+
+.section .status:empty {
+  margin: 0;
+  min-height: 0;
+}
+
+.btn-primary {
+  width: 100%;
+  background: var(--green);
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  font-size: 15px;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--green-dark);
+}
+
+.btn-primary:disabled {
+  background: #cccccc;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  width: 100%;
+  margin-top: 8px;
+  background: #ffffff;
+  color: var(--green-dark);
+  border: 1px solid var(--green);
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: #f1f7ef;
+}
+
+.status {
+  margin-top: 12px;
+  font-size: 13px;
+  text-align: center;
+  min-height: 18px;
+  color: var(--green-dark);
+}
+
+#flags {
+  margin-top: 12px;
+}
+
+.flag {
+  padding: 10px 12px;
+  margin: 6px 0;
+  background: #fff3f3;
+  border-left: 4px solid #d32f2f;
+  border-radius: 0 6px 6px 0;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.flag:hover {
+  background: #ffe8e8;
+}
+
+.flag.orange {
+  background: #fff8e1;
+  border-left-color: #f57c00;
+}
+
+.flag.orange:hover {
+  background: #fff0c2;
+}
+
+.flag-content {
+  flex: 1;
+  cursor: pointer;
+}
+
+.flag .flag-item {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.flag .flag-reason {
+  font-size: 12px;
+  color: #666;
+  margin-top: 2px;
+}
+
+.ignore-btn {
+  background: none;
+  border: 1px solid #ccc;
+  color: #888;
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.ignore-btn:hover {
+  background: #f0f0f0;
+  border-color: #999;
+  color: #555;
+}
+
+#reminders {
+  margin-top: 12px;
+}
+
+.reminder-header {
+  font-size: 12px;
+  font-weight: 600;
+  color: #1565c0;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.reminder {
+  padding: 10px 12px;
+  margin: 6px 0;
+  background: #e3f2fd;
+  border-left: 4px solid #1976d2;
+  border-radius: 0 6px 6px 0;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.reminder-content {
+  flex: 1;
+}
+
+.reminder-ignore {
+  border-color: #90caf9;
+}
+
+.reminder-ignore:hover {
+  background: #bbdefb;
+  border-color: #64b5f6;
+}
+
+.reminder .reminder-item {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.reminder .reminder-reason {
+  font-size: 12px;
+  color: #555;
+  margin-top: 2px;
+}
+
+.footer {
+  text-align: center;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #eee;
+}
+
+.footer p {
+  font-size: 10px;
+  color: #999;
+  margin: 0;
+}
