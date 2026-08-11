@@ -278,15 +278,13 @@ function renderChooser(report, context) {
   }
 }
 
+// Only the date, never where it came from: a day the menu does not cover says so
+// on the day itself, which is where it matters.
 function renderDataSource(dataSource) {
   if (!dataSource) return;
-  const when = dataSource.fetchedAt
-    ? new Date(dataSource.fetchedAt).toLocaleString()
-    : "not downloaded";
-  const problem = dataSource.error
-    ? ` \u2014 could not reach the published menu (${dataSource.error}), showing the last copy.`
+  el("dataSource").textContent = dataSource.fetchedAt
+    ? `Menu downloaded ${new Date(dataSource.fetchedAt).toLocaleDateString()}`
     : "";
-  el("dataSource").textContent = `Menu data: ${dataSource.source} (${when})${problem}`;
 }
 
 function escapeHtml(text) {
