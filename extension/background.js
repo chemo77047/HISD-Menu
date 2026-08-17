@@ -22,6 +22,35 @@ chrome.commands.onCommand.addListener((command) => {
   if (command === "scan-order") chrome.action.openPopup();
 });
 
+// One menu window, not one per press: a second window would sit on a stale order
+// and cost another read of the page, and closing them again was left to the user.
+let menuWindowId = null;
+
+chrome.windows.onRemoved.addListener((windowId) => {
+  if (windowId === menuWindowId) menuWindowId = null;
+});
+
+async function openMenuWindow() {
+  if (menuWindowId !== null) {
+    try {
+      await chrome.windows.update(menuWindowId, { focused: true, drawAttention: true });
+      // It re-reads the order on its own each time it is asked to show itself.
+      chrome.runtime.sendMessage({ action: "menuWindowShown" }).catch(() => {});
+      return;
+    } catch {
+      menuWindowId = null;      // closed while we were not looking
+    }
+  }
+
+  const created = await chrome.windows.create({
+    url: chrome.runtime.getURL("menu.html"),
+    type: "popup",
+    width: 760,
+    height: 900,
+  });
+  menuWindowId = created.id;
+}
+
 let componentsPromise = null;
 
 function loadComponents() {
@@ -42,6 +71,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
   if (message.action === "chooseSchool") {
     saveSchoolAlias(message.rawName, message.schoolKey)
+      .then(() => sendResponse({ ok: true }))
+      .catch((error) => sendResponse({ error: String(error.message || error) }));
+    return true;
+  }
+  if (message.action === "openMenuWindow") {
+    openMenuWindow()
       .then(() => sendResponse({ ok: true }))
       .catch((error) => sendResponse({ error: String(error.message || error) }));
     return true;
