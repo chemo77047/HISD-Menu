@@ -6,6 +6,8 @@
 // being keyed, which is the whole point: nobody should have to leave the order
 // screen to look a menu up.
 
+import { readOrderContext } from "./inject.js";
+
 const CONTEXT_KEY = "snap.orderContext";
 
 const MEAL_ORDER = ["Breakfast", "Lunch", "Snack", "Dinner"];
@@ -47,29 +49,42 @@ async function loadContext() {
   return stored[CONTEXT_KEY] || null;
 }
 
-// Re-reads the order page so the window can be left open while the order changes.
+// Reads the order page, which is this window's job rather than the popup's: the
+// popup can then close the moment it is clicked, and the order can be edited and
+// the window refreshed without going back to it.
 async function refreshContext(tabId) {
   if (!tabId) return null;
-  try {
-    const context = await chrome.tabs.sendMessage(tabId, { action: "getOrderContext" });
-    if (context) {
-      await chrome.storage.session.set({ [CONTEXT_KEY]: { ...context, tabId } });
-      return { ...context, tabId };
-    }
-  } catch {
-    // The tab was closed or navigated away; the stored context still stands.
-  }
-  return null;
+  const context = await readOrderContext(tabId);
+  if (!context) return null;
+  await chrome.storage.session.set({ [CONTEXT_KEY]: { ...context, tabId } });
+  return { ...context, tabId };
 }
 
-async function render({ forceRefresh = false, rereadPage = false } = {}) {
-  let context = await loadContext();
-  if (!context) {
+async function render({ forceRefresh = false } = {}) {
+  const stored = await loadContext();
+  if (!stored || !stored.tabId) {
     showError("Open a PrimeroEdge order, then click Show Menu in the SNAP Agent popup.");
     return;
   }
-  if (rereadPage) {
-    context = (await refreshContext(context.tabId)) || context;
+
+  el("notice").hidden = false;
+  el("notice").className = "notice";
+  el("notice").textContent = "Reading the order\u2026";
+
+  let context;
+  try {
+    context = (await refreshContext(stored.tabId)) || stored;
+  } catch (error) {
+    // Nothing else in the window means anything if the order cannot be read, so
+    // this is the whole message rather than a note above a stale menu.
+    showError(`Cannot read the order page: ${error.message}. Bring the order tab up, `
+      + "let it finish loading, then press Refresh.");
+    return;
+  }
+
+  if (!context.schoolName) {
+    showError("No order found on that page. Open a PrimeroEdge order, then press Refresh.");
+    return;
   }
 
   // The second look at possible missing items takes a moment, so say what is
@@ -261,7 +276,12 @@ function escapeHtml(text) {
   })[character]);
 }
 
-el("refreshBtn").addEventListener("click", () =>
-  render({ forceRefresh: true, rereadPage: true }));
+el("refreshBtn").addEventListener("click", () => render({ forceRefresh: true }));
+
+// Show Menu pressed again while this window is already open: it is brought
+// forward rather than duplicated, and re-reads the order in case it has changed.
+chrome.runtime.onMessage.addListener((message) => {
+  if (message.action === "menuWindowShown") render();
+});
 
 render();

@@ -72,6 +72,7 @@ exposes nothing that is not public already.
 | `extension/` | The Chrome extension, loaded unpacked |
 | `extension/schools.json` | 288 HISD sites, each with the serving lines it uses |
 | `extension/components.json` | Extras an entree needs that its menu name does not mention (a burger's bun) |
+| `extension/inject.js` | Puts the order reader into the order tab, only when a button is pressed |
 
 ## How the pieces fit
 
@@ -108,6 +109,16 @@ so a model failure, or no key at all, leaves the word-matched answer standing.
 One request per order, cached, and nothing about it is said in the window: staff
 want the answer, not a report on how it was reached. The counts are logged to the
 service worker console for troubleshooting.
+
+**Nothing runs in a page until a button is pressed.** The order reader
+(`extension/content.js`) used to be declared for every URL, so every tab of every
+site loaded it; it is now injected into the order tab on demand by
+`extension/inject.js`, and a second injection is a no-op. The popup does not read
+the order itself either - it hands over the tab number and opens the menu window,
+which does the reading. So pressing **Show Menu** cannot leave the popup sitting
+on a page that is mid-postback, and a page that will not answer within five
+seconds says so in the window rather than looking stuck. Pressing it again brings
+the one menu window forward and re-reads the order instead of opening another.
 
 ## Installing the extension
 

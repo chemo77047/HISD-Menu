@@ -3,38 +3,27 @@
 
 // The key and the sheet id live in config.js, which the service worker reads too.
 import { API_KEY, KEY_IS_SET, SPREADSHEET_ID } from "./config.js";
+import { ensureContentScript } from "./inject.js";
 
 // Opens the menu window: the delivery date and the next five school days, in a
-// window of its own so it can sit beside the order screen. The order context is
-// read here, while the popup still has access to the active tab, and handed over
-// through session storage.
+// window of its own so it can sit beside the order screen. Only the tab number is
+// handed over; the window reads the order itself, so the popup never waits on the
+// page and there is nothing to sit and watch here. Pressing the button again
+// brings the existing window forward instead of opening a second one.
 document.getElementById("menuBtn").addEventListener("click", async () => {
   const statusEl = document.getElementById("status");
   statusEl.style.color = "#3a7030";
-  statusEl.textContent = "Reading the order...";
+  statusEl.textContent = "Opening the menu...";
 
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    const context = await chrome.tabs.sendMessage(tab.id, { action: "getOrderContext" });
-
-    if (!context || !context.schoolName) {
-      statusEl.style.color = "#d32f2f";
-      statusEl.textContent = "No order found on this page. Open a PrimeroEdge order and refresh.";
-      return;
-    }
-
-    await chrome.storage.session.set({ "snap.orderContext": { ...context, tabId: tab.id } });
-    await chrome.windows.create({
-      url: chrome.runtime.getURL("menu.html"),
-      type: "popup",
-      width: 760,
-      height: 900,
-    });
+    await chrome.storage.session.set({ "snap.orderContext": { tabId: tab.id } });
+    await chrome.runtime.sendMessage({ action: "openMenuWindow" });
     statusEl.textContent = "";
     window.close();
   } catch (err) {
     statusEl.style.color = "#d32f2f";
-    statusEl.textContent = "Cannot read the page. Try refreshing it. (" + err.message + ")";
+    statusEl.textContent = "Could not open the menu window. (" + err.message + ")";
   }
 });
 
@@ -57,6 +46,7 @@ document.getElementById("scanBtn").addEventListener("click", async () => {
 
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    await ensureContentScript(tab.id);
 
     chrome.tabs.sendMessage(tab.id, { action: "scanOrder", apiKey: API_KEY, spreadsheetId: SPREADSHEET_ID }, (res) => {
       if (chrome.runtime.lastError) {
