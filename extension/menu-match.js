@@ -26,6 +26,11 @@ const NOISE = new Set([
   "serv", "serving", "servings", "portion", "cut", "sliced", "slice", "drained",
   "with", "and", "or", "the", "of", "in", "on", "individual", "mini",
   "plain", "asptic", "aseptic", "pouch", "bag", "bulk", "wrapped", "ds",
+  // How it is kept or presented, not what it is: the workbook writes "Juice,
+  // 100% Apple, 4oz (Shelf-stable)" where the vendor writes "JUICE, 100% APPLE
+  // ASEPTIC 96/4OZ CS".
+  "shelf", "stable", "shelfstable", "whole", "fresh", "raw", "regular", "reg",
+  "style", "ready", "prepared", "unit", "pack", "packed", "cont", "container",
 ]);
 
 // Vendor abbreviations, and plural forms the stemmer alone would not unify.
@@ -48,6 +53,10 @@ function stem(word) {
 export function tokenize(text) {
   const cleaned = (text || "")
     .toLowerCase()
+    // Parentheses in the workbook hold production and packaging codes - (C),
+    // (CP), (IW), (H/C), (K-8), (Shelf-stable) - never the food itself, and no
+    // vendor line carries them, so every word inside one is a guaranteed miss.
+    .replace(/\([^)]*\)/g, " ")
     .replace(/\b\d{2}-\d{2}\b/g, " ")                       // school-year suffix
     .replace(/\d+(\.\d+)?\s*(%|oz|lb|ct|ml|in|")?/g, " ")   // pack sizes
     .replace(/[^a-z\s]/g, " ");
@@ -61,10 +70,18 @@ export function tokenize(text) {
   return [...new Set(tokens)];
 }
 
+// The vendor runs words together where the workbook spaces them out
+// ("SOYBUTTER JELLY" against "Soy Butter and Jelly"), so a word long enough to
+// be distinctive also counts when it sits inside an order word.
+function hasToken(token, orderTokens) {
+  if (orderTokens.includes(token)) return true;
+  if (token.length < 4) return false;
+  return orderTokens.some((word) => word.length > token.length && word.includes(token));
+}
+
 export function scoreMatch(menuTokens, orderTokens) {
   if (menuTokens.length === 0) return 0;
-  const available = new Set(orderTokens);
-  const hits = menuTokens.filter((token) => available.has(token)).length;
+  const hits = menuTokens.filter((token) => hasToken(token, orderTokens)).length;
   return hits / menuTokens.length;
 }
 
@@ -94,7 +111,7 @@ export function bestOrderMatch(text, orderTokenized) {
   const head = tokens[0];
   let best = { score: 0, orderLine: null };
   for (const candidate of orderTokenized) {
-    if (head && !candidate.tokens.includes(head)) continue;
+    if (head && !hasToken(head, candidate.tokens)) continue;
     const score = scoreMatch(tokens, candidate.tokens);
     if (score > best.score) best = { score, orderLine: candidate.item };
   }

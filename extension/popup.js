@@ -1,13 +1,8 @@
 // SNAP Agent - School Nutrition AI Purchasing Agent
 // popup.js - Handles scan button and displays flagged items + reminders
 
-// Paste your OpenAI key between the quotes. It is only needed for Scan Order;
-// the menu window works without it. Anyone the extension folder is given to can
-// read this, so hand the folder out no more widely than you would the key.
-const API_KEY = "YOUR_OPENAI_API_KEY_HERE";
-const SPREADSHEET_ID = "1NOtQu0_rErgdA_5IlFMaA59Po6mVhRLU-L7Lhup0nZA";
-
-const KEY_IS_SET = /^sk-\S+/.test(API_KEY);
+// The key and the sheet id live in config.js, which the service worker reads too.
+import { API_KEY, KEY_IS_SET, SPREADSHEET_ID } from "./config.js";
 
 // Opens the menu window: the delivery date and the next five school days, in a
 // window of its own so it can sit beside the order screen. The order context is
@@ -51,7 +46,7 @@ document.getElementById("scanBtn").addEventListener("click", async () => {
   if (!KEY_IS_SET) {
     statusEl.style.color = "#d32f2f";
     statusEl.textContent = "No OpenAI key yet: paste it into API_KEY at the top of "
-      + "popup.js. The Show Menu button works without it.";
+      + "config.js. The Show Menu button works without it.";
     return;
   }
 

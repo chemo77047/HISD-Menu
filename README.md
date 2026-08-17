@@ -66,6 +66,8 @@ exposes nothing that is not public already.
 | `tools/menu_tool.py` | SNAP Menu Builder: the desktop window the monthly workbook goes through |
 | `tools/menu_db.py` | Reads the workbook, writes `menus.json`, `menus.sqlite`, `menu_flat.csv` and an import report |
 | `tools/match_check.mjs` | Dry-runs the missing-item check against a real order, outside the browser |
+| `tools/ai_review_check.mjs` | Dry-runs the second look with a stubbed model reply, no key or network needed |
+| `extension/config.js` | Where the OpenAI key and the rules sheet id go |
 | `data/menus.json` | The published menu file the extension fetches |
 | `extension/` | The Chrome extension, loaded unpacked |
 | `extension/schools.json` | 288 HISD sites, each with the serving lines it uses |
@@ -89,14 +91,23 @@ menu category. The grid sheets hold the item name as literal typed text; the
 recipe-number lookup the grids do with `VLOOKUP` is redone in Python. The summary
 sheet is still read on every import and used to verify the parse.
 
-**Warnings are rule-based, not model-based.** Menu names ("Pizza (C), Cheese, 8
-Cut") and order lines ("PIZZA, CHEESE THIN CRUST 8-CUT 72SV/CS") both name the
-food first and describe it afterwards, so a match requires that leading word plus
-two thirds of the rest. The same order therefore always produces the same
-warnings, at no cost, and a menu item can never be invented. Where a menu name
-already lists what comes with a dish ("Beef, Steak Fingers w/Roll") the parts are
-checked separately. Condiments are shown but never flagged, and milk is left out
-of the menu file altogether because it is ordered separately.
+**Warnings are decided by word matching first, then reviewed by a model.** Menu
+names ("Pizza (C), Cheese, 8 Cut") and order lines ("PIZZA, CHEESE THIN CRUST
+8-CUT 72SV/CS") both name the food first and describe it afterwards, so a match
+requires that leading word plus two thirds of the rest, ignoring pack sizes,
+storage codes and anything in parentheses. Where a menu name lists what comes
+with a dish ("Beef, Steak Fingers w/Roll") the parts are checked separately.
+Condiments are shown but never flagged, and milk is left out of the menu file
+altogether because it is ordered separately.
+
+That pass is literal by design, so it flags wording the two sides disagree about
+("Broccoli, Butter Buds, Fajita" against "VEG, BROCCOLI FLORETS"). When a key is
+set in `extension/config.js`, `extension/menu-ai.js` sends only that shortlist to
+`gpt-4o-mini` for a second look, which can **clear** an item but never add one -
+so a model failure, or no key at all, leaves the word-matched answer standing.
+One request per order, cached, and nothing about it is said in the window: staff
+want the answer, not a report on how it was reached. The counts are logged to the
+service worker console for troubleshooting.
 
 ## Installing the extension
 

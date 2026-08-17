@@ -16,6 +16,7 @@ import {
   setMenuUrl,
 } from "./menu-store.js";
 import { findMissingItems, isFlaggable } from "./menu-match.js";
+import { reviewMissing } from "./menu-ai.js";
 
 chrome.commands.onCommand.addListener((command) => {
   if (command === "scan-order") chrome.action.openPopup();
@@ -109,7 +110,12 @@ async function buildMenuReport(context, options) {
     items: (byDate[date] || []).map((item) => ({ ...item, flaggable: isFlaggable(item.category) })),
   }));
 
-  const missing = findMissingItems(byDate, context.items || [], await loadComponents());
+  const found = findMissingItems(byDate, context.items || [], await loadComponents());
+  // The word matching is literal, so a model gets the last word on the shortlist
+  // it produces - clearing what was ordered under different wording. Without a
+  // key this returns the list untouched.
+  const { missing, review } = await reviewMissing(found, context.items || []);
+  console.debug("SNAP second look:", review);
 
   return {
     school: school.name,

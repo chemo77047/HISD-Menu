@@ -72,6 +72,13 @@ async function render({ forceRefresh = false, rereadPage = false } = {}) {
     context = (await refreshContext(context.tabId)) || context;
   }
 
+  // The second look at possible missing items takes a moment, so say what is
+  // happening rather than showing an empty window.
+  const notice = el("notice");
+  notice.hidden = false;
+  notice.className = "notice";
+  notice.textContent = "Checking this order against the menu\u2026";
+
   const report = await chrome.runtime.sendMessage({
     action: "buildMenuReport",
     context,
@@ -79,6 +86,7 @@ async function render({ forceRefresh = false, rereadPage = false } = {}) {
   });
 
   if (report.needsSchoolChoice) {
+    notice.hidden = true;
     renderChooser(report, context);
     return;
   }
