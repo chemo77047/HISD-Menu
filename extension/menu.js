@@ -106,7 +106,7 @@ async function render({ forceRefresh = false, rereadPage = false } = {}) {
 
   renderNotice(report);
   renderDays(report);
-  renderDataSource(report.dataSource, report.review);
+  renderDataSource(report.dataSource);
 }
 
 function showError(text) {
@@ -248,20 +248,11 @@ function renderChooser(report, context) {
 
 // Only the date, never where it came from: a day the menu does not cover says so
 // on the day itself, which is where it matters.
-function renderDataSource(dataSource, review) {
+function renderDataSource(dataSource) {
   if (!dataSource) return;
-  const parts = [];
-  if (dataSource.fetchedAt) {
-    parts.push(`Menu downloaded ${new Date(dataSource.fetchedAt).toLocaleDateString()}`);
-  }
-  // Whether the second look happened changes how much the highlights can be
-  // trusted, so it is said plainly rather than left to be guessed at.
-  if (review && review.error) {
-    parts.push("double-check unavailable, showing word matches only");
-  } else if (review && review.cleared > 0) {
-    parts.push(`${review.cleared} of ${review.checked} possible misses cleared on a second look`);
-  }
-  el("dataSource").textContent = parts.join(" \u2022 ");
+  el("dataSource").textContent = dataSource.fetchedAt
+    ? `Menu downloaded ${new Date(dataSource.fetchedAt).toLocaleDateString()}`
+    : "";
 }
 
 function escapeHtml(text) {

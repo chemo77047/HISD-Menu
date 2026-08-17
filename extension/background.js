@@ -115,6 +115,7 @@ async function buildMenuReport(context, options) {
   // it produces - clearing what was ordered under different wording. Without a
   // key this returns the list untouched.
   const { missing, review } = await reviewMissing(found, context.items || []);
+  console.debug("SNAP second look:", review);
 
   return {
     school: school.name,
@@ -125,7 +126,6 @@ async function buildMenuReport(context, options) {
     orderItemCount: (context.items || []).length,
     days,
     missing,
-    review,
     coverage: { firstDate: menus.firstDate, lastDate: menus.lastDate },
     dataSource: { source, fetchedAt, error: menuError },
   };

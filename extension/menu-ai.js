@@ -40,8 +40,9 @@ const INSTRUCTIONS = [
  * missing     findMissingItems() output
  * orderItems  [{ index, item }] straight off the order page
  *
- * Returns { missing, review: { checked, cleared, cached, error } } - `review` is
- * for the window's footer, so a quiet failure is still visible if looked for.
+ * Returns { missing, review: { checked, cleared, cached, error } }. The window
+ * shows none of `review` - staff want the answer, not a report on how it was
+ * reached - so it exists for the service worker console and the dry run.
  */
 export async function reviewMissing(missing, orderItems) {
   if (!KEY_IS_SET || missing.length === 0 || orderItems.length === 0) {

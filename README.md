@@ -105,7 +105,9 @@ That pass is literal by design, so it flags wording the two sides disagree about
 set in `extension/config.js`, `extension/menu-ai.js` sends only that shortlist to
 `gpt-4o-mini` for a second look, which can **clear** an item but never add one -
 so a model failure, or no key at all, leaves the word-matched answer standing.
-One request per order, cached, and the window's footer says how many it cleared.
+One request per order, cached, and nothing about it is said in the window: staff
+want the answer, not a report on how it was reached. The counts are logged to the
+service worker console for troubleshooting.
 
 ## Installing the extension
 
