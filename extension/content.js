@@ -14,7 +14,16 @@
 
   chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     if (msg.action === "scanOrder") {
-      scanOrder(msg.apiKey, msg.spreadsheetId).then(sendResponse);
+      // An unhandled failure in here used to leave the reply outstanding forever,
+      // which reads as a scan that never finishes. Anything that goes wrong is
+      // answered with the reason instead.
+      scanOrder(msg.apiKey, msg.spreadsheetId)
+        .catch((error) => ({
+          flags: [],
+          reminders: [],
+          error: "Scan failed: " + String((error && error.message) || error),
+        }))
+        .then(sendResponse);
       return true;
     }
     if (msg.action === "highlightRow") {

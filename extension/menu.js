@@ -9,6 +9,7 @@
 import { readOrderContext } from "./inject.js";
 
 const CONTEXT_KEY = "snap.orderContext";
+const COLLAPSED_KEY = "snap.collapsedDays";
 
 const MEAL_ORDER = ["Breakfast", "Lunch", "Snack", "Dinner"];
 const CATEGORY_ORDER = [
@@ -47,6 +48,28 @@ function shortDate(iso) {
 async function loadContext() {
   const stored = await chrome.storage.session.get(CONTEXT_KEY);
   return stored[CONTEXT_KEY] || null;
+}
+
+// Which days have been folded away. Remembered against the delivery date, so a
+// refresh or bringing the window forward again leaves the same days folded - a
+// day is folded precisely to stop looking at it - while a different order opens
+// with every day showing.
+let collapsed = { deliveryDate: null, dates: [] };
+
+async function loadCollapsed(deliveryDate) {
+  const stored = await chrome.storage.session.get(COLLAPSED_KEY);
+  const saved = stored[COLLAPSED_KEY];
+  collapsed = saved && saved.deliveryDate === deliveryDate
+    ? saved
+    : { deliveryDate, dates: [] };
+}
+
+function rememberCollapsed(date, isCollapsed) {
+  const dates = new Set(collapsed.dates);
+  if (isCollapsed) dates.add(date);
+  else dates.delete(date);
+  collapsed = { deliveryDate: collapsed.deliveryDate, dates: [...dates] };
+  chrome.storage.session.set({ [COLLAPSED_KEY]: collapsed });
 }
 
 // Reads the order page, which is this window's job rather than the popup's: the
@@ -120,6 +143,7 @@ async function render({ forceRefresh = false } = {}) {
     `${report.orderItemCount} lines on the order \u2022 ${report.servingLines.join(", ")}`;
 
   renderNotice(report);
+  await loadCollapsed(report.deliveryDate);
   renderDays(report);
   renderDataSource(report.dataSource);
 }
@@ -184,13 +208,6 @@ function renderDays(report) {
     const section = document.createElement("section");
     section.className = "day" + (day.date === report.deliveryDate ? " is-delivery" : "");
 
-    const head = document.createElement("div");
-    head.className = "day-head";
-    head.innerHTML =
-      `${escapeHtml(day.weekday)}<span class="day-date">${shortDate(day.date)}` +
-      `${day.date === report.deliveryDate ? " \u2014 delivery day" : ""}</span>`;
-    section.appendChild(head);
-
     const body = document.createElement("div");
     body.className = "day-body";
 
@@ -229,6 +246,39 @@ function renderDays(report) {
         }
       }
     }
+    // A day is folded by its own heading: once its food has been checked off
+    // against the order, folding it leaves the days still to review on screen.
+    // Folded, the heading still says how many of that day's items are not on the
+    // order, so nothing that needs attention can be hidden by mistake.
+    const missingCount = body.querySelectorAll(".item.not-ordered").length;
+
+    const head = document.createElement("button");
+    head.type = "button";
+    head.className = "day-head";
+    head.innerHTML =
+      '<span class="day-toggle" aria-hidden="true"></span>'
+      + `<span class="day-name">${escapeHtml(day.weekday)}</span>`
+      + `<span class="day-date">${shortDate(day.date)}`
+      + `${day.date === report.deliveryDate ? " \u2014 delivery day" : ""}</span>`
+      + (missingCount
+        ? `<span class="day-missing">${missingCount} not on this order</span>`
+        : "");
+
+    const apply = (isCollapsed) => {
+      section.classList.toggle("collapsed", isCollapsed);
+      head.setAttribute("aria-expanded", String(!isCollapsed));
+      head.title = isCollapsed ? "Show this day" : "Hide this day";
+    };
+
+    apply(collapsed.dates.includes(day.date));
+
+    head.addEventListener("click", () => {
+      const isCollapsed = !section.classList.contains("collapsed");
+      apply(isCollapsed);
+      rememberCollapsed(day.date, isCollapsed);
+    });
+
+    section.appendChild(head);
     section.appendChild(body);
     container.appendChild(section);
   }
