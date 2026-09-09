@@ -17,6 +17,8 @@ import {
 } from "./menu-store.js";
 import { findMissingItems, isFlaggable } from "./menu-match.js";
 import { reviewMissing } from "./menu-ai.js";
+import { API_KEY, SPREADSHEET_ID } from "./config.js";
+import { ensureContentScript } from "./inject.js";
 
 chrome.commands.onCommand.addListener((command) => {
   if (command === "scan-order") chrome.action.openPopup();
@@ -51,6 +53,54 @@ async function openMenuWindow() {
   menuWindowId = created.id;
 }
 
+// The scan is run from here rather than from the popup. The popup is closed by
+// anything the user clicks next - the menu window especially - and a scan started
+// there died with it, leaving "Scanning order..." on screen with nothing behind
+// it. Run here it survives the popup, and its answer is kept for whenever the
+// popup is opened again.
+const SCAN_KEY = "snap.scan";
+const SCAN_TIMEOUT_MS = 120000;
+
+let scanInFlight = null;
+
+async function runScan(tabId) {
+  if (scanInFlight) return scanInFlight;      // one scan of one order at a time
+
+  await chrome.storage.session.set({ [SCAN_KEY]: { state: "running", tabId } });
+
+  scanInFlight = (async () => {
+    let result;
+    try {
+      await ensureContentScript(tabId);
+      const reply = chrome.tabs.sendMessage(tabId, {
+        action: "scanOrder",
+        apiKey: API_KEY,
+        spreadsheetId: SPREADSHEET_ID,
+      });
+      const timeout = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error("the order page did not answer in time")), SCAN_TIMEOUT_MS);
+      });
+      result = (await Promise.race([reply, timeout]))
+        || { error: "The order page gave no answer. Refresh it and scan again." };
+    } catch (error) {
+      result = {
+        error: `Cannot read the order page: ${String((error && error.message) || error)}. `
+          + "Bring the order tab up, let it finish loading, then scan again.",
+      };
+    }
+
+    await chrome.storage.session.set({ [SCAN_KEY]: { state: "done", tabId, result } });
+    chrome.runtime.sendMessage({ action: "scanFinished", tabId, result }).catch(() => {});
+    return result;
+  })();
+
+  try {
+    return await scanInFlight;
+  } finally {
+    scanInFlight = null;
+  }
+}
+
 let componentsPromise = null;
 
 function loadComponents() {
@@ -78,6 +128,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "openMenuWindow") {
     openMenuWindow()
       .then(() => sendResponse({ ok: true }))
+      .catch((error) => sendResponse({ error: String(error.message || error) }));
+    return true;
+  }
+  if (message.action === "scanOrder") {
+    runScan(message.tabId)
+      .then(sendResponse)
       .catch((error) => sendResponse({ error: String(error.message || error) }));
     return true;
   }

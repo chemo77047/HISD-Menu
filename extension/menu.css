@@ -78,14 +78,48 @@ p { margin: 0 0 10px; }
   border-radius: 8px;
   overflow: hidden;
 }
+/* The whole heading is the fold control, so a day can be put away with one
+   click anywhere along it rather than aiming at a small arrow. */
 .day-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
   padding: 8px 14px;
   background: #f1f7ef;
+  border: 0;
   border-bottom: 1px solid var(--line);
+  font: inherit;
   font-weight: 700;
+  text-align: left;
+  cursor: pointer;
 }
-.day-head .day-date { font-weight: 400; color: var(--muted); margin-left: 6px; font-size: 12px; }
+.day-head:hover { background: #e7f1e4; }
+.day-head:focus-visible { outline: 2px solid var(--green); outline-offset: -2px; }
+.day-head .day-date { font-weight: 400; color: var(--muted); font-size: 12px; }
+.day-head .day-missing {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 700;
+  color: #8a5300;
+  background: #ffe9c2;
+  border-radius: 10px;
+  padding: 2px 8px;
+}
+.day-toggle {
+  width: 10px;
+  height: 10px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg) translate(-2px, -2px);
+  transition: transform .12s ease;
+  flex: none;
+}
+.day.collapsed .day-toggle { transform: rotate(-45deg) translate(-2px, -2px); }
+.day.collapsed .day-head { border-bottom: 0; }
+.day.collapsed .day-body { display: none; }
 .day.is-delivery .day-head { background: var(--green); color: #fff; }
+.day.is-delivery .day-head:hover { background: #3f7a35; }
 .day.is-delivery .day-head .day-date { color: #eaf4e7; }
 .day-body { padding: 4px 14px 12px; }
 

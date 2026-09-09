@@ -120,6 +120,20 @@ on a page that is mid-postback, and a page that will not answer within five
 seconds says so in the window rather than looking stuck. Pressing it again brings
 the one menu window forward and re-reads the order instead of opening another.
 
+**The scan outlives the popup.** Chrome closes the popup the moment anything else
+is clicked - the menu window especially - and a scan started inside it went with
+it, which read as **Scan Order** stopping at "Scanning order..." and never
+finishing. `runScan` in `extension/background.js` now owns the scan: the popup
+only asks for it and draws the answer, so closing the popup no longer abandons
+it, the answer is kept in session storage for the next time the popup is opened,
+and a page that never answers times out with a reason instead of nothing.
+
+**Days fold away.** Each day's heading in the menu window is a button that hides
+that day, so a day already checked off against the order can be put away and
+leave the remaining ones on screen. A folded heading still carries a count of
+that day's items that are not on the order, so folding cannot hide a warning, and
+the folds are remembered for that delivery date across a **Refresh**.
+
 ## Installing the extension
 
 1. `chrome://extensions` -> enable Developer mode -> **Load unpacked** -> pick
